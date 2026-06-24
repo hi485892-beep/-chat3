@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'DM Sans', 'Segoe UI', sans-serif; background: #000; color: #fff; min-height: 100vh; }
+
+  .ig-topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid #262626; position: sticky; top: 0; background: #000; z-index: 100; }
+  .ig-topbar-back { font-size: 22px; cursor: pointer; color: #fff; }
+  .ig-topbar-username { font-size: 16px; font-weight: 600; letter-spacing: -0.02em; }
+  .ig-topbar-more { font-size: 22px; cursor: pointer; }
+
+  .profile-section { padding: 16px 16px 12px; }
+  .profile-top { display: flex; align-items: center; gap: 24px; margin-bottom: 16px; }
+  .avatar-wrap { position: relative; flex-shrink: 0; }
+  .avatar-ring { width: 88px; height: 88px; border-radius: 50%; padding: 2px; background: linear-gradient(45deg,#b09fff,#d4baff,#a8d4ff,#ffd6f5,#b09fff); background-size:200% 200%; animation: ringShimmer 3s ease infinite; }
+  @keyframes ringShimmer { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  .avatar-inner { width:100%; height:100%; border-radius:50%; background:#111; border:2px solid #000; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:28px; }
+  .stats-row { display:flex; gap:20px; flex:1; justify-content:space-around; }
+  .stat-item { display:flex; flex-direction:column; align-items:center; gap:2px; }
+  .stat-num { font-size:17px; font-weight:600; }
+  .stat-label { font-size:13px; color:#a8a8a8; }
+  .bio-section { margin-bottom:14px; }
+  .bio-name { font-size:14px; font-weight:600; margin-bottom:3px; }
+  .bio-text { font-size:14px; line-height:1.5; white-space:pre-line; }
+  .bio-link { font-size:14px; color:#b09fff; text-decoration:none; display:inline-block; margin-top:4px; }
+  .action-buttons { display:flex; gap:8px; margin-bottom:16px; }
+  .btn-follow { flex:1; background:linear-gradient(90deg,#b09fff,#d4baff,#a8d4ff); background-size:200% 100%; animation:btnShimmer 4s ease infinite; color:#000; font-size:14px; font-weight:600; padding:7px 0; border-radius:8px; border:none; cursor:pointer; }
+  @keyframes btnShimmer { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+  .btn-msg { flex:1; background:#1a1a1a; color:#fff; font-size:14px; font-weight:600; padding:7px 0; border-radius:8px; border:1px solid #333; cursor:pointer; }
+  .btn-chevron { background:#1a1a1a; color:#fff; font-size:14px; font-weight:600; padding:7px 12px; border-radius:8px; border:1px solid #333; cursor:pointer; }
+
+  .highlights-section { padding:4px 16px 16px; overflow-x:auto; display:flex; gap:16px; scrollbar-width:none; }
+  .highlights-section::-webkit-scrollbar { display:none; }
+  .highlight-item { display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0; cursor:pointer; }
+  .highlight-ring { width:64px; height:64px; border-radius:50%; padding:2px; background:#262626; border:1px solid #333; }
+  .highlight-inner { width:100%; height:100%; border-radius:50%; background:linear-gradient(135deg,#1a1030,#0d0d1a); display:flex; align-items:center; justify-content:center; font-size:22px; border:2px solid #000; }
+  .highlight-label { font-size:11px; color:#e0e0e0; text-align:center; }
+
+  .tabs-bar { display:flex; border-top:1px solid #262626; border-bottom:1px solid #262626; }
+  .tab { flex:1; display:flex; align-items:center; justify-content:center; padding:12px; cursor:pointer; border-bottom:2px solid transparent; color:#a8a8a8; font-size:20px; }
+  .tab.active { color:#fff; border-bottom-color:#fff; }
+
+  .posts-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:2px; }
+  .post-cell { aspect-ratio:1/1; position:relative; overflow:hidden; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:opacity 0.15s; }
+  .post-cell:hover { opacity:0.85; }
+  .post-bg { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:32px; }
+
+  .verified { display:inline-block; width:14px; height:14px; background:linear-gradient(135deg,#b09fff,#a8d4ff); border-radius:50%; position:relative; margin-left:4px; vertical-align:middle; }
+  .verified::after { content:"✓"; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:8px; color:#000; font-weight:700; }
+
+  .bottom-nav { position:fixed; bottom:0; left:0; right:0; background:#000; border-top:1px solid #262626; display:flex; justify-content:space-around; align-items:center; padding:10px 0 24px; z-index:100; }
+  .bottom-nav-item { cursor:pointer; font-size:24px; }
+  .spacer { height:80px; }
+
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.9); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .post-modal { display:flex; width:min(95vw,900px); max-height:90vh; background:#000; border:1px solid #262626; border-radius:4px; overflow:hidden; }
+  .modal-image-side { flex:0 0 55%; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .modal-img-placeholder { width:100%; height:100%; min-height:300px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; }
+  .modal-detail-side { flex:1; display:flex; flex-direction:column; border-left:1px solid #262626; max-height:90vh; overflow:hidden; }
+  .modal-header { display:flex; align-items:center; gap:12px; padding:14px 16px; border-bottom:1px solid #262626; flex-shrink:0; }
+  .modal-avatar-small { width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,#1a0f35,#0d1a30); display:flex; align-items:center; justify-content:center; font-size:10px; color:#b09fff; font-weight:700; flex-shrink:0; }
+  .modal-username { font-size:14px; font-weight:600; flex:1; }
+  .modal-more { font-size:20px; color:#fff; cursor:pointer; background:none; border:none; }
+  .modal-comments { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:16px; scrollbar-width:thin; scrollbar-color:#333 transparent; }
+  .comment-item { display:flex; gap:12px; align-items:flex-start; }
+  .comment-avatar { width:32px; height:32px; border-radius:50%; overflow:hidden; flex-shrink:0; background:#222; display:flex; align-items:center; justify-content:center; font-size:11px; color:#888; }
+  .comment-body { flex:1; }
+  .comment-text { font-size:14px; line-height:1.5; }
+  .comment-text strong { font-weight:600; margin-right:4px; }
+  .comment-meta { display:flex; gap:14px; margin-top:6px; align-items:center; }
+  .comment-time { font-size:12px; color:#a8a8a8; }
+  .comment-likes-label { font-size:12px; color:#a8a8a8; }
+  .comment-reply-btn { font-size:12px; color:#a8a8a8; cursor:pointer; font-weight:600; }
+  .comment-heart-btn { margin-left:auto; color:#a8a8a8; font-size:14px; cursor:pointer; border:none; background:none; }
+  .replies-toggle { font-size:12px; color:#a8a8a8; cursor:pointer; margin-top:8px; display:flex; align-items:center; gap:8px; }
+  .replies-toggle::before { content:""; display:inline-block; width:24px; height:1px; background:#a8a8a8; }
+  .modal-actions { border-top:1px solid #262626; padding:10px 16px; flex-shrink:0; }
+  .action-icons { display:flex; gap:16px; align-items:center; margin-bottom:8px; }
+  .action-icon { font-size:22px; cursor:pointer; background:none; border:none; color:#fff; }
+  .likes-count { font-size:14px; font-weight:600; margin-bottom:4px; }
+  .post-date { font-size:11px; color:#a8a8a8; text-transform:uppercase; letter-spacing:0.05em; }
+  .modal-comment-input { border-top:1px solid #262626; padding:12px 16px; display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .nickname-input { background:#111; border:1px solid #333; color:#fff; font-size:13px; padding:6px 10px; border-radius:8px; outline:none; width:90px; font-family:inherit; }
+  .nickname-input::placeholder { color:#666; }
+  .comment-input { flex:1; background:none; border:none; color:#fff; font-size:14px; outline:none; font-family:inherit; }
+  .comment-input::placeholder { color:#a8a8a8; }
+  .post-btn { font-size:14px; font-weight:600; color:#b09fff; background:none; border:none; cursor:pointer; opacity:0.4; }
+  .post-btn.active { opacity:1; }
+  .modal-close-btn { position:fixed; top:20px; right:20px; z-index:300; background:none; border:none; color:#fff; font-size:28px; cursor:pointer; display:none; }
+  .modal-overlay.open ~ .modal-close-btn { display:block; }
+
+  .loading-comments { color:#a8a8a8; font-size:13px; text-align:center; padding:20px 0; }
+  .akgae { background:#200a20 !important; color:#ff88ff !important; }
+
+  @media (max-width:600px) {
+    .post-modal { flex-direction:column; width:100vw; max-height:100vh; border-radius:0; }
+    .modal-image-side { flex:0 0 45vw; min-height:45vw; }
+    .modal-detail-side { border-left:none; border-top:1px solid #262626; }
+  }
+</style>
+</head>
+<body>
+
+<div class="ig-topbar">
+  <div class="ig-topbar-back">‹</div>
+  <div class="ig-topbar-username">AURAofficial <span class="verified"></span></div>
+  <div class="ig-topbar-more">⋯</div>
+</div>
+
+<div class="profile-section">
+  <div class="profile-top">
+    <div class="avatar-wrap">
+      <div class="avatar-ring">
+        <div class="avatar-inner">✦</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-item"><span class="stat-num">7</span><span class="stat-label">게시물</span></div>
+      <div class="stat-item"><span class="stat-num">85.9만</span><span class="stat-label">팔로워</span></div>
+      <div class="stat-item"><span class="stat-num">0</span><span class="stat-label">팔로잉</span></div>
+    </div>
+  </div>
+  <div class="bio-section">
+    <div class="bio-name">아우라 AURA <span class="verified"></span></div>
+    <div class="bio-text">✦ STARVISION Entertainment
+✦ 보이그룹 AURA 공식 계정
+✦ 우리의 빛이 되어줘 🌙
+<span style="color:#a8a8a8;font-size:13px;">#AURA #아우라 #STARVISION</span></div>
+    <a href="#" class="bio-link">⋆ starvision.kr/aura</a>
+  </div>
+  <div class="action-buttons">
+    <button class="btn-follow">팔로우</button>
+    <button class="btn-msg">메시지</button>
+    <button class="btn-chevron">∨</button>
+  </div>
+</div>
+
+<div class="highlights-section">
+  <div class="highlight-item"><div class="highlight-ring"><div class="highlight-inner">✦</div></div><span class="highlight-label">데뷔</span></div>
+  <div class="highlight-item"><div class="highlight-ring"><div class="highlight-inner">🌊</div></div><span class="highlight-label">음악</span></div>
+  <div class="highlight-item"><div class="highlight-ring"><div class="highlight-inner">🌙</div></div><span class="highlight-label">비하인드</span></div>
+  <div class="highlight-item"><div class="highlight-ring"><div class="highlight-inner">💫</div></div><span class="highlight-label">팬미팅</span></div>
+  <div class="highlight-item"><div class="highlight-ring"><div class="highlight-inner">🎤</div></div><span class="highlight-label">직캠</span></div>
+</div>
+
+<div class="tabs-bar">
+  <div class="tab active">⊞</div>
+  <div class="tab">▷</div>
+  <div class="tab">⊡</div>
+</div>
+
+<div class="posts-grid" id="postsGrid"></div>
+<div class="spacer"></div>
+
+<!-- 모달들 동적 생성 -->
+<div id="modalsContainer"></div>
+
+<div class="bottom-nav">
+  <div class="bottom-nav-item">🏠</div>
+  <div class="bottom-nav-item">🔍</div>
+  <div class="bottom-nav-item">➕</div>
+  <div class="bottom-nav-item">🎬</div>
+  <div class="bottom-nav-item">👤</div>
+</div>
+
+<script>
+// ── 게시물 데이터 ──────────────────────────────────────────────────────
+const POSTS = [
+  {
+    id: 1, member: '이로진', emoji: '🎸',
+    grad: 'linear-gradient(135deg,#0d0820,#1a0f35,#0a1628)',
+    caption: '✦ 이로진 (ROJIN)\n작업실에서 🎸\n새벽에 혼자 기타 치다가... 멜로디 하나 건졌다 ㅎ\n열심히 만들고 있을게요 기대해줘요 🎵\n\n#이로진 #ROJIN #AURA #아우라 #작업중 #기타 #음악',
+    date: '2시간 전', baseLikes: 84000,
+    presetComments: [
+      {user:'star_rojin_love',avatar:'루',bg:'#1a0f30',color:'#b09fff',text:'이로진아 작곡하는 거 알고 있었는데 직접 올려줘서 넘 좋아 🎸💜',time:'5분 전',likes:'342'},
+      {user:'aura_rojin_0101',avatar:'로',bg:'#0d1a30',color:'#a8d4ff',text:'기타 소리 들려줘요ㅠㅠ 얼른 발매해줘 로진아 💙',time:'15분 전',likes:'1,204',replies:'12'},
+      {user:'rojin_melody_fan',avatar:'멜',bg:'#1a1010',color:'#ffb4d4',text:'새벽 감성 작업실 이로진... 이게 꿈이냐 현실이냐 😭🎵',time:'32분 전',likes:'3,872'},
+      {user:'night_guitar_r',avatar:'밤',bg:'#0a1a1a',color:'#a8d4ff',text:'기타 연주하는 로진이 너무 멋있어 빨리 음원 내줘 제발!!!',time:'1시간 전',likes:'5,219',replies:'47'},
+      {user:'aurora_starlove',avatar:'AU',bg:'#1a1030',color:'#b09fff',text:'스케치들도 보인다 그림도 그려요?? 다재다능 이로진 실화냐 🎨',time:'1시간 전',likes:'2,891'},
+      {user:'purple_aura_j',avatar:'퍼',bg:'#1a0820',color:'#d4baff',text:'커피 한 잔 옆에 두고 작곡하는 새벽감성 로진이... 배경화면 해야겠다',time:'2시간 전',likes:'987'},
+      {user:'rojin_always_1st',avatar:'항',bg:'#0a0f1a',color:'#a8d4ff',text:'이로진 음악 기다리고 있어요 진심으로 응원합니다 🌙✨',time:'2시간 전',likes:'654'},
+      {user:'eunhwi_only_fox',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'기타 치는 거 있어 보이는 거 인정하는데 은휘도 음악 잘하거든요? 이로진만 음악 천재인 척하는 게 좀 웃기다 솔직히',time:'1시간 전',likes:'4',replies:'38',akgae:true},
+      {user:'foxgang_eunhwi',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'새벽에 혼자 기타 치다가 멜로디 건졌다고요 ㅋㅋ 은휘는 그 시간에 숏폼 챌린지 올리고 팬들이랑 소통하는데 뭐가 더 아이돌다운 건지 모르겠음 히키코모리 감성이 미덕인 시대임?',time:'55분 전',likes:'2',akgae:true},
+    ]
+  },
+  {
+    id: 2, member: '도현', emoji: '💚',
+    grad: 'linear-gradient(135deg,#0f0518,#1e0a30,#100a1e)',
+    caption: '✦ 도현 (DOHYEON) 💚\n오늘 하루도 잘 부탁해요 😊\n\n#도현 #DOHYEON #AURA #아우라 #일상',
+    date: '1일 전', baseLikes: 297000,
+    presetComments: [
+      {user:'aurora_starlove',avatar:'AU',bg:'#1a1030',color:'#b09fff',text:'도현아 오늘도 잘 부탁해 우리가 더 부탁이지 😭💚',time:'1일 전',likes:'4,201',replies:'48'},
+      {user:'starvision_official',avatar:'sv',bg:'#0d1a30',color:'#a8d4ff',text:'우리 도현 최고 🌟',time:'1일 전',likes:'8,102'},
+      {user:'night_aura_fan',avatar:'밤',bg:'#2a1020',color:'#ffb4d4',text:'도현 눈빛 실화냐 😍😍😍 이 비주얼 어떻게 해',time:'1일 전',likes:'5,782',replies:'23'},
+      {user:'hoshi_aura',avatar:'星',bg:'#0a1a1a',color:'#a8d4ff',text:'도현이 리즈 갱신 중... 매일 예뻐지는 사람 있음? 🤍',time:'2일 전',likes:'3,219'},
+      {user:'luminary_do',avatar:'루',bg:'#1a0a1a',color:'#d4baff',text:'도현이 사진 진짜 프린트해서 붙여야겠다 ✨✨',time:'1일 전',likes:'1,847'},
+      {user:'eundohyeon_0224',avatar:'은',bg:'#0d0820',color:'#b09fff',text:'이거 너무해 심장 ㅠㅠㅠ 💜',time:'1일 전',likes:'4,561',replies:'31'},
+      {user:'purple_starlight_d',avatar:'퍼',bg:'#1a1010',color:'#ffb4d4',text:'도현 너무 잘생겨졌어 🥺🥺 리즈 어디까지야',time:'20시간 전',likes:'2,093'},
+      {user:'star_aura_lover',avatar:'별',bg:'#0a0f1a',color:'#a8d4ff',text:'이 계정 팔로우 한 게 내 인생 최고의 선택이다 😭💙',time:'12시간 전',likes:'987'},
+      {user:'eunhwi_foxclub',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'리즈 갱신이요? ㅋㅋ 은휘 페이스 직캠 조회수 한번 보고 오시죠 진짜 레전드가 뭔지 그때 말해요',time:'11시간 전',likes:'7',replies:'61',akgae:true},
+      {user:'fox_eunhwi_1st',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'맨날 아파서 무대 절반은 앉아서 하는 리더가 팀에 얼마나 도움이 되는지 진짜 모르겠음 은휘가 퍼포먼스로 다 메꾸는 거 팬들 눈에는 안 보임?',time:'10시간 전',likes:'5',replies:'44',akgae:true},
+    ]
+  },
+  {
+    id: 3, member: '도현', emoji: '🎮',
+    grad: 'linear-gradient(135deg,#080d1a,#0f1530,#1a0828)',
+    caption: '✦ 도현 (DOHYEON) 💚\n오늘 나온다~! 🛒\n찾아봐요 👀\n\n#도현 #DOHYEON #AURA #아우라 #도현일상',
+    date: '4일 전', baseLikes: 412000,
+    presetComments: [
+      {user:'dohyeon_world',avatar:'도',bg:'#1a0f30',color:'#b09fff',text:'아케이드 온 도현이 ㅠㅠ 나도 같이 가고 싶었는데 😭💚',time:'4일 전',likes:'6,234',replies:'72'},
+      {user:'green_eye_do',avatar:'눈',bg:'#0d1a30',color:'#a8d4ff',text:'도현 초록 눈 빛나고 있어... 이 비주얼에 아케이드라니 💚',time:'4일 전',likes:'9,812'},
+      {user:'aura_fan_kang',avatar:'강',bg:'#1a1010',color:'#ffb4d4',text:'허리백 차고 나온 도현이 진짜 너무 귀엽다 ㅠㅠ 토끼 뱃지까지',time:'3일 전',likes:'7,445',replies:'33'},
+      {user:'blue_jacket_do',avatar:'파',bg:'#0a1a1a',color:'#a8d4ff',text:'파란 트랙수트 도현이 레전드야... 이거 어디 거야 알려줘요',time:'3일 전',likes:'5,102'},
+      {user:'neon_aura',avatar:'네',bg:'#1a0820',color:'#d4baff',text:'네온 배경에 도현이 진짜 하나의 작품이다 🎮✨',time:'3일 전',likes:'4,009',replies:'17'},
+      {user:'puppy_dohyeon',avatar:'강',bg:'#0d0820',color:'#b09fff',text:'도현 V자 포즈 너무 귀엽잖아 😭💚 이게 아이돌이지',time:'2일 전',likes:'3,241'},
+      {user:'daily_aura_fan',avatar:'데',bg:'#0a0f1a',color:'#a8d4ff',text:'도현이 오늘 너무 즐거워 보여서 나도 덩달아 기분 좋아졌어 🌈',time:'2일 전',likes:'1,876'},
+      {user:'real_eunhwi_stan',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'아케이드 올 시간에 팬들이랑 라방이나 하지 그건 은휘만 하는 건가요? 팬들한테 얼굴 자주 보여주는 게 팬사랑이지 사진 한 장 찍어 올리는 게 팬사랑임?',time:'2일 전',likes:'9',replies:'29',akgae:true},
+    ]
+  },
+  {
+    id: 4, member: '도현', emoji: '🌊',
+    grad: 'linear-gradient(135deg,#0d0820,#0a0d20,#15082a)',
+    caption: '✦ 도현 (DOHYEON) 🌊\n바다다 🌊☀️\n\n#도현 #DOHYEON #AURA #아우라 #여름 #바다',
+    date: '1주일 전', baseLikes: 558000,
+    presetComments: [
+      {user:'sea_aura_d',avatar:'바',bg:'#1a0f30',color:'#b09fff',text:'바다 도현... 이건 진짜 범죄야 😭🌊 신고합니다',time:'1주일 전',likes:'12,304',replies:'108'},
+      {user:'ocean_dohyeon',avatar:'오',bg:'#0d1a30',color:'#a8d4ff',text:'도현 바다 사진 보고 숨 막혔잖아요 진짜 ㄹㅇ',time:'1주일 전',likes:'15,892'},
+      {user:'summer_aura',avatar:'여',bg:'#1a1010',color:'#ffb4d4',text:'여름 도현이 레전드다... 이 비주얼 실화냐 ☀️💚',time:'1주일 전',likes:'9,447',replies:'55'},
+      {user:'wave_fan_do',avatar:'파',bg:'#0a1a1a',color:'#a8d4ff',text:'물 뚝뚝 떨어지는 도현이 진짜 드라마 찍냐 😍',time:'6일 전',likes:'8,102'},
+      {user:'beach_dohyeon',avatar:'비',bg:'#1a0820',color:'#d4baff',text:'비주얼 미쳤다 어떻게 이렇게 생겼어 그냥 신이냐',time:'6일 전',likes:'6,771',replies:'29'},
+      {user:'green_wave',avatar:'초',bg:'#0d0820',color:'#b09fff',text:'초록 눈에 바닷물 맺힌 도현이... 이거 사진 아니고 그림 아님? 🎨',time:'5일 전',likes:'5,290'},
+      {user:'wet_aura',avatar:'습',bg:'#0a0f1a',color:'#a8d4ff',text:'물에 젖은 도현이 레전드 역대급이다 진짜 심장 멎는 줄 💙',time:'5일 전',likes:'3,981'},
+      {user:'eunhwi_protecter77',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'이게 레전드임? ㅋㅋ 은휘 페이스 직캠 한번 보고 오세요 진짜 레전드가 뭔지 알게 될 거임 도현 팬들 기준이 너무 낮은 거 아니냐',time:'5일 전',likes:'3',replies:'57',akgae:true},
+      {user:'fox_truth_acc',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'신인이 얼굴 하나로 팬덤 꽉 잡는 건 은휘도 마찬가지거든요 근데 은휘는 컨텐츠도 많이 올리고 라방도 자주 하는데 왜 도현이만 이렇게 띄워주는 건지 기준을 모르겠음',time:'5일 전',likes:'1',akgae:true},
+    ]
+  },
+  {
+    id: 5, member: '은휘', emoji: '🏆',
+    grad: 'linear-gradient(135deg,#100518,#1a1030,#0d0820)',
+    caption: '✦ 은휘 (EUNHWI) 🏆\n신인상 수상 감사합니다 🙏✨\n이 상은 저 혼자가 아닌 AURA 멤버들, 그리고 항상 응원해주시는 모든 분들 덕분입니다.\n앞으로도 더 좋은 모습 보여드릴게요. 감사합니다 💫\n\n#은휘 #EUNHWI #AURA #아우라 #신인상 #수상 #감사합니다',
+    date: '2주일 전', baseLikes: 621000,
+    presetComments: [
+      {user:'eunhwi_always',avatar:'항',bg:'#1a0f30',color:'#b09fff',text:'은휘야 신인상 진짜 축하해 너무 당연한 거야 😭🏆',time:'2주일 전',likes:'18,432',replies:'156'},
+      {user:'starvision_official',avatar:'sv',bg:'#0d1a30',color:'#a8d4ff',text:'은휘 수상 진심으로 축하드립니다 🌟 앞으로도 응원해요',time:'2주일 전',likes:'22,109'},
+      {user:'trophy_eunhwi',avatar:'축',bg:'#1a1010',color:'#ffb4d4',text:'축하해 은휘야ㅠㅠㅠ 이 상 너무 당연하게 받아야 했어 💜',time:'2주일 전',likes:'11,892',replies:'67'},
+      {user:'gold_aura',avatar:'금',bg:'#0a1a1a',color:'#a8d4ff',text:'금빛 트로피 든 은휘 미쳤다... 이거 실화입니까 😭✨',time:'2주일 전',likes:'9,004'},
+      {user:'night_star_e',avatar:'별',bg:'#1a0820',color:'#d4baff',text:'은휘 소감 듣고 울었잖아요 진짜로 ㅠㅠ 너무 멋있어',time:'1주일 전',likes:'7,234',replies:'42'},
+      {user:'confetti_fan',avatar:'색',bg:'#0d0820',color:'#b09fff',text:'축하 폭죽 펑 🎊 은휘 신인상 레전드 남길 거야 이건',time:'1주일 전',likes:'5,891'},
+      {user:'always_eunhwi',avatar:'미',bg:'#0a0f1a',color:'#a8d4ff',text:'미래에도 계속 받아라 은휘야 💙 앞으로도 쭉 응원할게',time:'1주일 전',likes:'4,012'},
+    ]
+  },
+  {
+    id: 6, member: '리안', emoji: '🌶️',
+    grad: 'linear-gradient(135deg,#08101a,#0d0820,#1a0f30)',
+    caption: '✦ 리안 (RIAN) 🥬\n김장 봉사 다녀왔어요! 🙌\n손이 빨개졌는데 너무 즐거웠습니다 ㅎㅎ\n따뜻한 김치 많이 드세요 🌶️❤️\n\n#리안 #RIAN #AURA #아우라 #봉사활동 #김장 #김치',
+    date: '3주일 전', baseLikes: 473000,
+    presetComments: [
+      {user:'kimchi_rian',avatar:'김',bg:'#1a0f30',color:'#b09fff',text:'리안 봉사 활동 너무 멋있어 진짜ㅠㅠ 마음까지 예쁜 사람 🌶️',time:'3주일 전',likes:'13,201',replies:'89'},
+      {user:'red_hair_fan',avatar:'빨',bg:'#0d1a30',color:'#a8d4ff',text:'빨간 머리 리안이 김장 봉사라니... 비주얼이랑 색 맞춤? ㅋㅋㅋ 💜',time:'3주일 전',likes:'16,547'},
+      {user:'rian_love_k',avatar:'리',bg:'#1a1010',color:'#ffb4d4',text:'리안 분홍 장갑이 포인트야 ㅠㅠ 너무 귀엽잖아 🩷',time:'3주일 전',likes:'9,882',replies:'44'},
+      {user:'kimjang_rian',avatar:'봉',bg:'#0a1a1a',color:'#a8d4ff',text:'봉사하면서 저렇게 환하게 웃는 리안이 진짜 천사다 😭',time:'2주일 전',likes:'7,330'},
+      {user:'spicy_aura',avatar:'매',bg:'#1a0820',color:'#d4baff',text:'매운 고추양념이 얼굴에도 튀었는데 더 예쁜 리안 어떻게 설명함 😂❤️',time:'2주일 전',likes:'6,112',replies:'28'},
+      {user:'hanbok_fan',avatar:'한',bg:'#0d0820',color:'#b09fff',text:'한복 입고 김장하는 리안이 레전드다... 이거 화보 아니야? 🎋',time:'2주일 전',likes:'4,889'},
+      {user:'warm_rian',avatar:'따',bg:'#0a0f1a',color:'#a8d4ff',text:'따뜻한 마음 리안이 이래서 최애야 ❤️ 봉사까지 하다니 진짜',time:'2주일 전',likes:'3,201'},
+      {user:'eunhwi_only_real',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'허진오 아들이라 방송 관리 받는 거랑 진짜 실력은 다른 문제 아닌가요? 은휘는 그런 배경 하나도 없이 직캠이랑 숏폼으로 다 뚫었는데 비교가 됨?',time:'2주일 전',likes:'6',replies:'63',akgae:true},
+      {user:'foxeunhwi_stan',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'봉사 한 번 하면 이미지 다 세탁되는 거 ㅋㅋ 버블은 들쭉날쭉하면서 이런 사진은 올리는 거 보면 솔직히 좀 계산된 느낌 아님? 은휘는 한 달에 한 번도 버블 들어오기 힘든 스케줄인데도 라방은 팬들 위해 자주 킨다고',time:'1주일 전',likes:'2',replies:'71',akgae:true},
+    ]
+  },
+  {
+    id: 7, member: '이로진', emoji: '🎡',
+    grad: 'linear-gradient(135deg,#0a0518,#150a28,#0d1020)',
+    caption: '✦ 이로진 (ROJIN) 🐰\n놀이공원 왔다 헿헿 🎡\n토끼 귀 쓰고 간 건 절대 아니거든요!!!!!! (쓰고 갔습니다)\n츄러스 맛있다 아이스크림도 맛있다 세상이 좋아\n\n#이로진 #ROJIN #AURA #아우라 #놀이공원 #일상 #행복',
+    date: '1달 전', baseLikes: 386000,
+    presetComments: [
+      {user:'rojin_bunny',avatar:'토',bg:'#1a0f30',color:'#b09fff',text:'토끼 귀 이로진 레전드다... 진짜 귀엽다 미쳐버리겠어 🐰💜',time:'1달 전',likes:'17,234',replies:'192'},
+      {user:'amusement_rojin',avatar:'놀',bg:'#0d1a30',color:'#a8d4ff',text:'놀이공원 가서도 이렇게 비주얼 유지하냐 로진이 진짜 말이 안 돼',time:'1달 전',likes:'12,882'},
+      {user:'churros_fan',avatar:'츄',bg:'#1a1010',color:'#ffb4d4',text:'츄러스 든 이로진 뱀파이어 이빨이 왜 그렇게 귀여워ㅠㅠ 😭🍦',time:'1달 전',likes:'9,441',replies:'63'},
+      {user:'pink_bow_rojin',avatar:'핑',bg:'#0a1a1a',color:'#a8d4ff',text:'핑크 리본 머리에 꽂은 로진이 ㅠㅠ 누가 꽂아줬어 솔직히 말해봐',time:'1달 전',likes:'8,102'},
+      {user:'ferris_wheel_r',avatar:'관',bg:'#1a0820',color:'#d4baff',text:'관람차 배경 이로진... 이거 드라마 포스터야 현실이야? 🎡✨',time:'1달 전',likes:'6,320',replies:'31'},
+      {user:'ice_cream_aura',avatar:'아',bg:'#0d0820',color:'#b09fff',text:'아이스크림이랑 츄러스 둘 다 든 로진이 너무 귀엽다 🍦 행복해보여서 나도 행복해',time:'1달 전',likes:'5,109'},
+      {user:'vampire_rojin',avatar:'뱀',bg:'#0a0f1a',color:'#a8d4ff',text:'뱀파이어 이빨에 토끼귀 조합이 이렇게 귀여울 수가 있냐고 로진이는 진짜 💙',time:'1달 전',likes:'4,788',replies:'17'},
+      {user:'eunhwi_truth_only',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'히키코모리 컨셉인데 놀이공원은 잘 오네 ㅋㅋ 팬들이랑 소통은 버블 가끔 들어오는 게 전부면서 이런 사진은 올리는 거 진짜 신기하다 은휘가 라방 얼마나 자주 하는지 알면 비교도 안 될 텐데',time:'1달 전',likes:'8',replies:'42',akgae:true},
+      {user:'foxgang_forever77',avatar:'🦊',bg:'#200a20',color:'#ff88ff',text:'토끼귀가 귀엽다고 난리인데 🦊 여우 모에화인 은휘 셀카 퀄리티랑 sns 감성 비교해봐라 진짜로 미감이 압도적으로 다름 인정?',time:'1달 전',likes:'11',akgae:true},
+    ]
+  }
+];
+
+// ── 그라디언트 배경 ────────────────────────────────────────────────────
+const GRADS = [
+  'linear-gradient(135deg,#0d0820,#1a0f35,#0a1628)',
+  'linear-gradient(135deg,#0f0518,#1e0a30,#100a1e)',
+  'linear-gradient(135deg,#080d1a,#0f1530,#1a0828)',
+  'linear-gradient(135deg,#0d0820,#0a0d20,#15082a)',
+  'linear-gradient(135deg,#100518,#1a1030,#0d0820)',
+  'linear-gradient(135deg,#08101a,#0d0820,#1a0f30)',
+  'linear-gradient(135deg,#0a0518,#150a28,#0d1020)',
+];
+
+// ── 그리드 렌더 ───────────────────────────────────────────────────────
+const grid = document.getElementById('postsGrid');
+POSTS.forEach((p,i) => {
+  const cell = document.createElement('div');
+  cell.className = 'post-cell';
+  cell.onclick = () => openPost(p.id);
+  cell.innerHTML = `<div class="post-bg" style="background:${GRADS[i]}">${p.emoji}</div>`;
+  grid.appendChild(cell);
+});
+
+// ── 모달 렌더 ─────────────────────────────────────────────────────────
+const modalsContainer = document.getElementById('modalsContainer');
+
+function fmtLikes(n) { return n >= 10000 ? (n/10000).toFixed(1)+'만' : n.toLocaleString(); }
+
+function buildModal(p) {
+  const div = document.createElement('div');
+  div.className = 'modal-overlay';
+  div.id = 'modal'+p.id;
+  div.onclick = e => { if(e.target===div) closePost(p.id); };
+
+  div.innerHTML = `
+    <div class="post-modal">
+      <div class="modal-image-side">
+        <div class="modal-img-placeholder" style="background:${p.grad}">
+          <div style="font-size:72px">${p.emoji}</div>
+          <div style="font-size:13px;color:#b09fff;letter-spacing:0.1em">${p.member}</div>
+        </div>
+      </div>
+      <div class="modal-detail-side">
+        <div class="modal-header">
+          <div class="modal-avatar-small">AU</div>
+          <span class="modal-username">AURAofficial <span class="verified"></span></span>
+          <span style="font-size:12px;color:#a8a8a8;margin-left:4px;">${p.member}</span>
+          <button class="modal-more" onclick="closePost(${p.id})">✕</button>
+        </div>
+        <div class="modal-comments" id="commentsArea${p.id}">
+          <div class="comment-item">
+            <div class="comment-avatar" style="background:linear-gradient(135deg,#1a0f35,#0d1a30);font-size:10px;color:#b09fff;font-weight:700;">AU</div>
+            <div class="comment-body">
+              <div class="comment-text"><strong>AURAofficial</strong> ${p.caption.replace(/\n/g,'<br>').replace(/#(\S+)/g,'<span style="color:#b09fff;">#$1</span>')}</div>
+              <div class="comment-meta"><span class="comment-time">${p.date}</span><span class="comment-reply-btn">답글 달기</span></div>
+            </div>
+            <button class="comment-heart-btn">♡</button>
+          </div>
+          <div id="presetComments${p.id}"></div>
+          <div id="sharedComments${p.id}"><div class="loading-comments">댓글 불러오는 중...</div></div>
+        </div>
+        <div class="modal-actions">
+          <div class="action-icons">
+            <button class="action-icon" id="mainHeart${p.id}" onclick="toggleMainHeart(${p.id},${p.baseLikes})">♡</button>
+            <button class="action-icon" onclick="focusComment(${p.id})">💬</button>
+            <button class="action-icon">↗</button>
+            <button class="action-icon" style="margin-left:auto;">🔖</button>
+          </div>
+          <div class="likes-count">좋아요 <span id="likeNum${p.id}">${fmtLikes(p.baseLikes)}</span>개</div>
+          <div class="post-date">${p.date}</div>
+        </div>
+        <div class="modal-comment-input">
+          <input class="nickname-input" id="nickInput${p.id}" type="text" placeholder="닉네임" maxlength="20">
+          <input class="comment-input" id="commentInput${p.id}" type="text" placeholder="댓글 달기..." oninput="togglePostBtn(${p.id})">
+          <button class="post-btn" id="postBtn${p.id}" onclick="addComment(${p.id})">게시</button>
+        </div>
+      </div>
+    </div>`;
+  modalsContainer.appendChild(div);
+
+  // 프리셋 댓글 렌더
+  const presetArea = div.querySelector('#presetComments'+p.id);
+  p.presetComments.forEach(c => {
+    presetArea.innerHTML += `
+      <div class="comment-item">
+        <div class="comment-avatar" style="background:${c.bg};color:${c.color};${c.akgae?'font-size:16px;':'font-size:11px;'}">${c.avatar}</div>
+        <div class="comment-body">
+          <div class="comment-text"><strong>${c.user}</strong> ${c.text}</div>
+          <div class="comment-meta">
+            <span class="comment-time">${c.time}</span>
+            <span class="comment-likes-label">좋아요 ${c.likes}개</span>
+            <span class="comment-reply-btn">답글 달기</span>
+          </div>
+          ${c.replies ? `<div class="replies-toggle">답글 보기 (${c.replies}개)</div>` : ''}
+        </div>
+        <button class="comment-heart-btn">♡</button>
+      </div>`;
+  });
+}
+
+POSTS.forEach(buildModal);
+
+// ── 상태 ─────────────────────────────────────────────────────────────
+const likedState = {};
+POSTS.forEach(p => likedState[p.id] = false);
+
+function openPost(id) {
+  document.getElementById('modal'+id).classList.add('open');
+  document.body.style.overflow = 'hidden';
+  loadSharedComments(id);
+}
+function closePost(id) {
+  document.getElementById('modal'+id).classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', e => { if(e.key==='Escape') POSTS.forEach(p => closePost(p.id)); });
+
+function toggleMainHeart(id, base) {
+  likedState[id] = !likedState[id];
+  const btn = document.getElementById('mainHeart'+id);
+  btn.textContent = likedState[id] ? '♥' : '♡';
+  btn.style.color = likedState[id] ? '#ed4956' : '#fff';
+  document.getElementById('likeNum'+id).textContent = fmtLikes(base + (likedState[id] ? 1 : 0));
+}
+
+function focusComment(id) { document.getElementById('commentInput'+id).focus(); }
+
+function togglePostBtn(id) {
+  const v = document.getElementById('commentInput'+id).value.trim();
+  document.getElementById('postBtn'+id).classList.toggle('active', v.length > 0);
+}
+
+// ── 공유 댓글 저장/로드 ──────────────────────────────────────────────
+async function loadSharedComments(postId) {
+  const area = document.getElementById('sharedComments'+postId);
+  area.innerHTML = '<div class="loading-comments">댓글 불러오는 중...</div>';
+  try {
+    const result = await window.storage.get('comments_post_'+postId, true);
+    const comments = result ? JSON.parse(result.value) : [];
+    renderSharedComments(postId, comments);
+  } catch(e) {
+    renderSharedComments(postId, []);
+  }
+}
+
+function renderSharedComments(postId, comments) {
+  const area = document.getElementById('sharedComments'+postId);
+  if (!comments.length) { area.innerHTML = ''; return; }
+  area.innerHTML = comments.map(c => `
+    <div class="comment-item">
+      <div class="comment-avatar" style="background:#1a0f30;font-size:11px;color:#b09fff;">${c.nick.charAt(0)}</div>
+      <div class="comment-body">
+        <div class="comment-text"><strong>${escHtml(c.nick)}</strong> ${escHtml(c.text)}</div>
+        <div class="comment-meta"><span class="comment-time">${c.time}</span><span class="comment-reply-btn">답글 달기</span></div>
+      </div>
+      <button class="comment-heart-btn">♡</button>
+    </div>`).join('');
+  // 스크롤 맨 아래
+  const commentsArea = document.getElementById('commentsArea'+postId);
+  commentsArea.scrollTop = commentsArea.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo() {
+  const now = new Date();
+  return `${now.getMonth()+1}/${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+async function addComment(postId) {
+  const nickEl = document.getElementById('nickInput'+postId);
+  const inp = document.getElementById('commentInput'+postId);
+  const nick = nickEl.value.trim() || '익명';
+  const text = inp.value.trim();
+  if (!text) return;
+
+  inp.value = '';
+  nickEl.value = '';
+  document.getElementById('postBtn'+postId).classList.remove('active');
+
+  // 낙관적 UI
+  const area = document.getElementById('commentsArea'+postId);
+  const tempDiv = document.createElement('div');
+  tempDiv.className = 'comment-item';
+  tempDiv.innerHTML = `
+    <div class="comment-avatar" style="background:#1a0f30;font-size:11px;color:#b09fff;">${nick.charAt(0)}</div>
+    <div class="comment-body">
+      <div class="comment-text"><strong>${escHtml(nick)}</strong> ${escHtml(text)}</div>
+      <div class="comment-meta"><span class="comment-time">방금</span></div>
+    </div>
+    <button class="comment-heart-btn">♡</button>`;
+  const sharedArea = document.getElementById('sharedComments'+postId);
+  sharedArea.appendChild(tempDiv);
+  area.scrollTop = area.scrollHeight;
+
+  // 저장소에 저장
+  try {
+    let comments = [];
+    try {
+      const result = await window.storage.get('comments_post_'+postId, true);
+      comments = result ? JSON.parse(result.value) : [];
+    } catch(e) { comments = []; }
+    comments.push({ nick, text, time: timeAgo() });
+    // 최대 200개
+    if (comments.length > 200) comments = comments.slice(-200);
+    await window.storage.set('comments_post_'+postId, JSON.stringify(comments), true);
+    // 다시 렌더 (방금 추가 포함)
+    renderSharedComments(postId, comments);
+  } catch(e) {
+    console.error('저장 실패:', e);
+  }
+}
+</script>
+</body>
+</html>
